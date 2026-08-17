@@ -2,8 +2,9 @@
  * API service for communicating with the backend estimator API.
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 const TOKEN_KEY = 'wandee_admin_token';
+
 
 export const getStoredToken = () => {
   return localStorage.getItem(TOKEN_KEY) || '';
