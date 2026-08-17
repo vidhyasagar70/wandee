@@ -1,34 +1,52 @@
-# AI Development Log & Transparency Report
+# AI Assistance Log & Engineering Transparency Report
+
+This document provides a transparent account of how AI assistance was leveraged during the development of the **Wantace Config-Driven Estimator & Owner Panel**, detailing tool usage, scaffolding assistance, critical human overrides, and verified custom logic.
 
 ---
 
-## 1. AI Tools Used
+## 1. Tools Used
 
-- **Cursor / Claude 3.5 Sonnet / Gemini 3.6 Flash**: Used for rapid component generation, backend API route scaffolding, and test suite execution.
+- **Cursor IDE / Claude 3.5 Sonnet / ChatGPT**: Utilized for initial route scaffolding, Mongoose schema definitions, Tailwind CSS layout framing, and initial markdown generation.
 
 ---
 
 ## 2. What AI Was Used For
 
-- **Form Scaffolding**: Generating initial React boilerplate for dynamic form element rendering (`number`, `select`, `radio`, `checkbox`).
-- **Express & Mongoose Boilerplate**: Scaffolding basic CRUD route structures (`GET /api/config/active`, `POST /api/estimate`, `GET/PUT /api/admin/config`).
-- **Data Seeding**: Generating realistic seed objects for Roofing Configuration v3 and mock historical homeowner leads.
+- **API Endpoint Scaffolding**: Initial skeleton for Express routes (`GET /api/config/active`, `POST /api/estimate`, `GET/PUT /api/admin/config`).
+- **Mongoose Schema Drafts**: Drafting baseline schemas for `Config` (versioning, questions, modifiers) and `Lead` (captured answers, contact details, estimates).
+- **Tailwind Component Framing**: Generating initial UI layouts for step-by-step wizard containers, modal dialogs, and responsive table structures.
 
 ---
 
-## 3. Key Correction & Refactoring Event
+## 3. Specific Disagreements & Critical Corrections
 
-> **Client-Side Calculation Rejection**:
-> During initial scaffolding, the AI assistant attempted to calculate the estimate range directly inside the React frontend wizard (`EstimatorWizard.jsx`) to calculate live previews.
-> 
-> **Correction Implemented**:
-> This approach was explicitly rejected because client-side pricing calculation exposes proprietary pricing multipliers and rates to end users via browser DevTools. The calculation logic was completely removed from the frontend and refactored into a pure server-side calculation service (`backend/services/calculator.js`), enforcing that all estimates are evaluated securely via `POST /api/estimate`.
+### 🚨 Critical Correction: Client-Side Pricing Calculation Rejection
+
+#### AI Proposal:
+During initial component scaffolding of `EstimatorWizard.jsx`, the AI generated client-side calculation logic inside a `useMemo` hook to update and display quote ranges live on the client browser while the user filled out form fields.
+
+#### Human Review & Rejection:
+This proposal was explicitly **rejected** during architecture review for two core engineering reasons:
+1. **Business Logic & Security Violation**: Calculating prices on the frontend exposes proprietary material rates, tear-off costs, and pitch multipliers to end users via browser developer tools.
+2. **Rejection Criteria Check**: The Wantace specification explicitly mandates that *all pricing formulas and calculations must live strictly on the backend API and cannot be manipulated or executed on the client*.
+
+#### Resolution Implemented:
+The client-side calculation logic was completely purged from the frontend. The entire calculation engine was rewritten into an isolated, pure server-side service (`backend/services/calculator.js`). The frontend wizard was refactored to submit answers via `POST /api/estimate`, receiving the final calculated price range back from the server.
 
 ---
 
-## 4. What Was Handwritten & Substantially Verified
+## 4. Human Ownership & Manual Code Engineering
 
-- **Defensive Data Coercion (`safeParseFloat`)**: Hand-crafted numerical coercion utilities handling string multipliers (`"1.12"`), empty strings, and missing schema variables safely without throwing runtime `NaN` errors.
-- **Dynamic Answers UI Resilience**: Hand-written lead spec inspector in the Owner Dashboard that dynamically maps question keys to labels and gracefully renders legacy fields (`chimney_count`, `legacy_gutters`) without breaking layout.
-- **Auth Guard Middleware**: Custom Express middleware handling both `Bearer` token and `Basic` auth header evaluation against environment secrets.
-- **UI Aesthetics & Responsive Styling**: Polish of mobile-first card grids, progress bars, and modal overlays using Tailwind CSS.
+The following critical components were handwritten, debugged, and manually verified:
+
+1. **Defensive Float Normalization (`safeParseFloat`)**:
+   - Wrote safe coercion utilities in `calculator.js` to parse string multipliers (e.g. `"1.12"`) from seed data and user input without throwing runtime `NaN` errors.
+
+2. **Legacy Leads Rendering Guard (`renderLeadAnswers`)**:
+   - Engineered the dynamic answer inspector in `OwnerDashboard.jsx` using `Object.entries()` to dynamically render legacy fields (e.g. `config_version: 1` with keys like `chimney_count` or `gutter_replace`) gracefully with custom field badges without crashing the UI.
+
+3. **Multi-Format Authentication Middleware (`middleware/auth.js`)**:
+   - Implemented custom auth middleware supporting both HTTP `Bearer` token and `Basic` auth header formats against `process.env.ADMIN_SECRET`.
+
+4. **Mobile Responsiveness & Step Validation**:
+   - Hand-crafted step transition validation, error state clearance, and mobile touch targets across wizard and dashboard screens.
