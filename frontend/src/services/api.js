@@ -2,8 +2,17 @@
  * API service for communicating with the backend estimator API.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
+const rawBase = import.meta.env.VITE_API_BASE_URL || '/api';
+// Normalize base URL so it always ends with /api
+const getNormalizedApiBase = (url) => {
+  if (!url || url === '/api') return '/api';
+  const trimmed = url.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+};
+
+const API_BASE = getNormalizedApiBase(rawBase);
 const TOKEN_KEY = 'wandee_admin_token';
+
 
 
 export const getStoredToken = () => {
